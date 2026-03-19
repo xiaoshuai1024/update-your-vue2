@@ -1,6 +1,6 @@
 {
   "name": "update-your-vue2",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "type": "module",
   "description": "A CLI tool to upgrade Vue 2 projects to Vue 3.",
   "license": "MIT",
