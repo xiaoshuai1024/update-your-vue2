@@ -17,7 +17,12 @@
         "provenance": true
       }
     ],
-    "@semantic-release/github",
+    [
+      "@semantic-release/github",
+      {
+        "assets": []
+      }
+    ],
     [
       "@semantic-release/git",
       {
