@@ -17,7 +17,8 @@ jobs:
         with:
           node-version: ${{ matrix.node }}
           cache: npm
-      - run: npm ci
+          cache-dependency-path: package-lock.json
+      - run: npm ci --prefer-offline
       - run: npm test
       - run: npm run build
 
