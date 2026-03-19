@@ -1,5 +1,7 @@
-import generate from "@babel/generator";
+import * as babelGenerate from "@babel/generator";
 import type { File } from "@babel/types";
+
+const generate = (babelGenerate as any).default || babelGenerate.default;
 
 /**
  * Print a Babel File AST back to source string.
