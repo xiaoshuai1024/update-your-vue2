@@ -14,7 +14,7 @@
     "dist"
   ],
   "scripts": {
-    "build": "tsc -p tsconfig.json",
+    "build": "tsc -p tsconfig.json && node scripts/fix-esm-extensions.mjs",
     "dev": "tsc -p tsconfig.json -w",
     "test": "vitest run",
     "test:watch": "vitest",
