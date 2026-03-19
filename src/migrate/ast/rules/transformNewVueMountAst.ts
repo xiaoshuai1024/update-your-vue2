@@ -2,7 +2,7 @@ import * as babelTraverse from "@babel/traverse";
 import * as t from "@babel/types";
 import type { AstCodemod } from "../types";
 
-const traverse = (babelTraverse as any).default || babelTraverse.default;
+const traverse = (babelTraverse.default as any)?.default ?? babelTraverse.default;
 
 function extractAppIdentifier(renderValue: t.Expression | t.SpreadElement | t.PrivateName | t.PatternLike): t.Identifier | null {
   if (t.isArrowFunctionExpression(renderValue)) {

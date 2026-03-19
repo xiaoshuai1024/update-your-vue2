@@ -31,6 +31,15 @@ function parseTarget(value: string): "vite" | "webpack" {
   return parsed.data;
 }
 
+function getCwd(): string {
+  try {
+    return process.cwd();
+  } catch {
+    console.error("Error: Current working directory does not exist. Please navigate to a valid directory.");
+    process.exit(1);
+  }
+}
+
 export async function main(argv: string[]) {
   const program = new Command();
 
@@ -52,7 +61,7 @@ export async function main(argv: string[]) {
     .option("--verbose", "Verbose logging", false)
     .action(async (projectRootArg: string | undefined, options) => {
       const logger = createLogger(options.verbose ? "verbose" : "info");
-      const projectRoot = resolve(projectRootArg ?? process.cwd());
+      const projectRoot = resolve(projectRootArg ?? getCwd());
       const backupDir = resolve(projectRoot, options.backupDir ?? ".update-your-vue2/backups");
 
       let zipPath: string | undefined = options.zip ? resolve(projectRoot, options.zip) : undefined;
@@ -138,7 +147,7 @@ export async function main(argv: string[]) {
       projectRootArg = undefined;
     }
 
-    const projectRoot = projectRootArg ?? process.cwd();
+    const projectRoot = projectRootArg ?? getCwd();
     const loaded = await loadConfig(projectRoot, {
       configPath: options.config,
       target: options.target,
