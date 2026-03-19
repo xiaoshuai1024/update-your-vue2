@@ -1,6 +1,7 @@
 import type { UpdateYourVue2Config } from "../../config/schema";
 import type { ChangeQueue } from "../../changes/changeQueue";
 import { applyViteScaffoldToQueue, planViteScaffold } from "./viteScaffold";
+import { planWebpackBuild } from "./webpackPlan";
 
 export interface BuildTargetPlan {
   notes: string[];
@@ -13,8 +14,6 @@ export function planBuildTarget(projectRoot: string, config: UpdateYourVue2Confi
     return { notes: plan.notes };
   }
 
-  return {
-    notes: ["target=webpack: build config migration is not implemented yet (MVP)."]
-  };
+  return { notes: planWebpackBuild().notes };
 }
 

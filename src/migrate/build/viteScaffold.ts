@@ -10,16 +10,24 @@ export function planViteScaffold(projectRoot: string): ViteScaffoldPlan {
   const viteConfigPath = join(projectRoot, "vite.config.ts");
   const content = `import { defineConfig } from "vite";
 import vue from "@vitejs/plugin-vue";
+import { fileURLToPath, URL } from "node:url";
 
 export default defineConfig({
-  plugins: [vue()]
+  plugins: [vue()],
+  resolve: {
+    alias: {
+      "@": fileURLToPath(new URL("./src", import.meta.url))
+    }
+  },
+  // Adjust when deploying under a sub-path.
+  base: "/"
 });
 `;
 
   return {
     files: [{ path: viteConfigPath, content }],
     notes: [
-      "Vite scaffold generated: review aliases, env vars, and static asset handling when migrating from webpack."
+      "Vite scaffold generated with alias/base defaults: review env vars, static asset handling, and publicPath/base migration."
     ]
   };
 }

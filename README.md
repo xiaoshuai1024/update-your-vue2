@@ -42,6 +42,7 @@ update-your-vue2 --no-install
 Notes:
 - Default backup output: `.update-your-vue2/backups/*.zip`
 - Default build target: `vite` (generates `vite.config.ts`)
+- `--install` is opt-in and runs after file changes apply
 
 ## Restore from a backup zip
 
@@ -63,6 +64,12 @@ update-your-vue2 restore --zip .update-your-vue2/backups/<backup>.zip
 update-your-vue2 restore --zip .update-your-vue2/backups/<backup>.zip --dry-run
 ```
 
+- **Skip default pre-backup**
+
+```bash
+update-your-vue2 restore --zip .update-your-vue2/backups/<backup>.zip --no-prebackup
+```
+
 ## Fixture (for local verification)
 
 The repo includes a minimal sample project at `fixtures/vue2-sample/` so you can quickly try:
@@ -71,4 +78,9 @@ The repo includes a minimal sample project at `fixtures/vue2-sample/` so you can
 node dist/cli.js fixtures/vue2-sample --dry-run
 node dist/cli.js fixtures/vue2-sample --no-install
 ```
+
+Expected after non-dry-run:
+- `package.json` dependencies/scripts migrated and old scripts backed up at `updateYourVue2.backupScripts`
+- `vite.config.ts` generated with alias/base defaults
+- `src/main.js` transformed to `createApp(...).mount(...)` when pattern is safe
 

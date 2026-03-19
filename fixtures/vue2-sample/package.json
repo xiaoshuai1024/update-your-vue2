@@ -1,9 +1,0 @@
-{
-  "name": "vue2-sample",
-  "private": true,
-  "dependencies": {
-    "vue": "^2.7.0",
-    "vue-router": "^3.5.0"
-  }
-}
-
