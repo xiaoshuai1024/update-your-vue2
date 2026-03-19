@@ -1,3 +1,11 @@
+## [1.0.1](https://github.com/xiaoshuai1024/update-your-vue2/compare/v1.0.0...v1.0.1) (2026-03-19)
+
+
+### Bug Fixes
+
+* add ESM support and build output validation ([7a37892](https://github.com/xiaoshuai1024/update-your-vue2/commit/7a3789295982884f1627e2c03868d9b4e1adf196))
+* **ci:** run build before tests and improve build output validation ([3ea38b5](https://github.com/xiaoshuai1024/update-your-vue2/commit/3ea38b51beda5aa9742f7a68095b1884aab29995))
+
 # 1.0.0 (2026-03-19)
 
 
