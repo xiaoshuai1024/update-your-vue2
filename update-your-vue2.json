@@ -1,0 +1,8 @@
+{
+  "target": "vite",
+  "useCompat": false,
+  "generateTypes": false,
+  "backup": true,
+  "backupDir": ".update-your-vue2/backups",
+  "install": true
+}

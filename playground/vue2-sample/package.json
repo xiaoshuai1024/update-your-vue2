@@ -1,0 +1,24 @@
+{
+  "name": "vue2-sample",
+  "private": true,
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "vue": "^3",
+    "vue-router": "^4"
+  },
+  "devDependencies": {
+    "vite": "^6",
+    "@vitejs/plugin-vue": "^5"
+  },
+  "updateYourVue2": {
+    "backupScripts": {
+      "dev": "webpack serve --mode development",
+      "build": "webpack --mode production",
+      "preview": "node ./scripts/preview.js"
+    }
+  }
+}

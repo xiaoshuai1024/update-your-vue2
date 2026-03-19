@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "description": "A CLI tool to upgrade Vue 2 projects to Vue 3.",
   "license": "MIT",
-  "private": true,
+  "private": false,
   "bin": {
     "update-your-vue2": "./dist/cli.js"
   },
@@ -17,20 +17,34 @@
     "dev": "tsc -p tsconfig.json -w",
     "test": "vitest run",
     "test:watch": "vitest",
-    "lint": "echo \"(no lint yet)\""
+    "lint": "echo \"(no lint yet)\"",
+    "release": "semantic-release"
   },
   "dependencies": {
+    "@babel/generator": "^7.28.4",
+    "@babel/parser": "^7.28.4",
+    "@babel/traverse": "^7.28.4",
+    "@babel/types": "^7.28.4",
+    "@vue/compiler-sfc": "^3.5.21",
     "archiver": "^7.0.1",
     "commander": "^14.0.1",
     "fast-glob": "^3.3.3",
     "ignore": "^7.0.5",
+    "recast": "^0.23.11",
     "zod": "^4.1.5"
   },
   "devDependencies": {
+    "@semantic-release/changelog": "^6.0.3",
+    "@semantic-release/git": "^10.0.1",
+    "@semantic-release/github": "^11.0.1",
+    "@semantic-release/npm": "^12.0.2",
     "@types/adm-zip": "^0.5.7",
     "@types/archiver": "^7.0.0",
+    "@types/babel__generator": "^7.27.0",
+    "@types/babel__traverse": "^7.28.0",
     "@types/node": "^24.3.0",
     "adm-zip": "^0.5.16",
+    "semantic-release": "^24.2.0",
     "typescript": "^5.9.2",
     "vitest": "^3.2.4"
   },

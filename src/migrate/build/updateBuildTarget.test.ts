@@ -17,5 +17,18 @@ describe("planBuildTarget", () => {
       expect(summary.changes.some((c) => c.path.endsWith("/vite.config.ts"))).toBe(true);
     });
   });
+
+  it("emits webpack notes and does not write files for target=webpack", async () => {
+    await withTempDir(async (dir) => {
+      const queue = new ChangeQueue();
+      const plan = planBuildTarget(
+        dir,
+        { target: "webpack", useCompat: false, generateTypes: false, backup: true, install: false },
+        queue
+      );
+      expect(plan.notes.some((n) => n.includes("conservative mode"))).toBe(true);
+      expect(queue.summary().changes).toEqual([]);
+    });
+  });
 });
 
