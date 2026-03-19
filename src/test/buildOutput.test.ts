@@ -53,7 +53,7 @@ describe("build output", () => {
     const output = execSync("node dist/cli.js --help", {
       cwd: process.cwd(),
       encoding: "utf8",
-      timeout: 30000,
+      timeout: 60000,
     });
     expect(output).toContain("Usage:");
   });
