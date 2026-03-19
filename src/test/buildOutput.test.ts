@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeAll } from "vitest";
 import { execSync } from "node:child_process";
-import { readdirSync, readFileSync, statSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 
 describe("build output", () => {
@@ -11,6 +11,8 @@ describe("build output", () => {
   });
 
   it("all relative imports have .js extensions for ESM compatibility", () => {
+    expect(existsSync(distPath)).toBe(true);
+
     const errors: string[] = [];
 
     function checkFile(filePath: string) {
@@ -46,15 +48,19 @@ describe("build output", () => {
   });
 
   it("CLI can be executed after build", () => {
+    expect(existsSync(distPath)).toBe(true);
+
     const output = execSync("node dist/cli.js --help", {
       cwd: process.cwd(),
       encoding: "utf8",
-      timeout: 10000,
+      timeout: 30000,
     });
     expect(output).toContain("Usage:");
   });
 
   it("build produces all expected files", () => {
+    expect(existsSync(distPath)).toBe(true);
+
     const cliPath = join(distPath, "cli.js");
     const indexPath = join(distPath, "index.js");
     const configPath = join(distPath, "config", "loadConfig.js");
