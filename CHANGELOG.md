@@ -1,3 +1,11 @@
+## [1.0.4](https://github.com/xiaoshuai1024/update-your-vue2/compare/v1.0.3...v1.0.4) (2026-03-19)
+
+
+### Bug Fixes
+
+* handle non-existent working directory gracefully ([9a75e2f](https://github.com/xiaoshuai1024/update-your-vue2/commit/9a75e2fe9f80fc3f24990b3afe68c70e11b90519))
+* properly handle nested default exports in ESM for [@babel](https://github.com/babel) packages ([a15fef6](https://github.com/xiaoshuai1024/update-your-vue2/commit/a15fef65588c27cf6848a33561f7369b246d40f6))
+
 ## [1.0.3](https://github.com/xiaoshuai1024/update-your-vue2/compare/v1.0.2...v1.0.3) (2026-03-19)
 
 
