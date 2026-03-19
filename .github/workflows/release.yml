@@ -7,8 +7,6 @@ on:
 
 permissions:
   contents: write
-  issues: write
-  pull-requests: write
   id-token: write
 
 jobs:
@@ -18,20 +16,16 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: npm
           registry-url: https://registry.npmjs.org
-      - run: npm ci
-      - run: npm test
-      - run: npm run build
-      - name: Release
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          NPM_CONFIG_PROVENANCE: true
-          NPM_CONFIG_OIDC: true
-        run: |
-          unset NPM_TOKEN
-          npm run release
 
+      - run: npm ci
+      - run: npm run build
+
+      - name: Publish to npm
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: npm publish --provenance --access public
