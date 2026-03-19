@@ -1,3 +1,10 @@
+## [1.0.3](https://github.com/xiaoshuai1024/update-your-vue2/compare/v1.0.2...v1.0.3) (2026-03-19)
+
+
+### Bug Fixes
+
+* fix ESM import for @babel/traverse and @babel/generator ([52a89cf](https://github.com/xiaoshuai1024/update-your-vue2/commit/52a89cf73e23d3a56e11b0fcd73b4e5cae38d77c))
+
 ## [1.0.2](https://github.com/xiaoshuai1024/update-your-vue2/compare/v1.0.1...v1.0.2) (2026-03-19)
 
 
