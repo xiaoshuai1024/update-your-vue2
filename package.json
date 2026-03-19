@@ -20,6 +20,10 @@
     "lint": "echo \"(no lint yet)\"",
     "release": "semantic-release"
   },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/xiaoshuai1024/update-your-vue2.git"
+  },
   "dependencies": {
     "@babel/generator": "^7.28.4",
     "@babel/parser": "^7.28.4",
