@@ -1,0 +1,5 @@
+node_modules
+dist
+.update-your-vue2
+migration-report.md
+
