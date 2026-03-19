@@ -21,6 +21,29 @@ update-your-vue2 --help
 
 ## Migrate a project (MVP)
 
+### Config file (root)
+
+The CLI will auto-load `update-your-vue2.json` from the target project root.
+
+Example config (migrate + install dependencies):
+
+```json
+{
+  "target": "vite",
+  "useCompat": false,
+  "generateTypes": false,
+  "backup": true,
+  "backupDir": ".update-your-vue2/backups",
+  "install": true
+}
+```
+
+You can also point to a custom config file:
+
+```bash
+update-your-vue2 --config ./path/to/update-your-vue2.json
+```
+
 - **Dry run (recommended first)**
 
 ```bash
@@ -72,11 +95,11 @@ update-your-vue2 restore --zip .update-your-vue2/backups/<backup>.zip --no-preba
 
 ## Fixture (for local verification)
 
-The repo includes a minimal sample project at `fixtures/vue2-sample/` so you can quickly try:
+The repo includes a minimal sample project at `playground/vue2-sample/` so you can quickly try:
 
 ```bash
-node dist/cli.js fixtures/vue2-sample --dry-run
-node dist/cli.js fixtures/vue2-sample --no-install
+node dist/cli.js playground/vue2-sample --dry-run
+node dist/cli.js playground/vue2-sample --no-install
 ```
 
 Expected after non-dry-run:

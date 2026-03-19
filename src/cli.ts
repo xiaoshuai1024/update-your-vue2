@@ -289,7 +289,7 @@ export async function main(argv: string[]) {
           }
         ]
       });
-      logger.info("Note: migration steps are not implemented yet (scaffold only).");
+      logger.info("Migration completed. Review migration-report.md and run your project tests before shipping.");
     }
   });
 
