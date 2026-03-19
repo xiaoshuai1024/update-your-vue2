@@ -15,8 +15,11 @@ import { restoreFromZip } from "./restore/restoreFromZip";
 import { planDependencyUpgrade, applyDependencyUpgradeToQueue } from "./migrate/deps/upgradeDependencies";
 import { planBuildTarget } from "./migrate/build/updateBuildTarget";
 import { runCodemods } from "./migrate/codemods/runner";
-import { DEFAULT_CODEMODS } from "./migrate/codemods";
+import { DEFAULT_AST_CODEMODS, DEFAULT_CODEMODS } from "./migrate/codemods";
 import { planGenerateTypes } from "./migrate/types/generateTypes";
+import { applyScriptsMigrationToQueue, planScriptsMigration } from "./migrate/scripts/planScriptsMigration";
+import { detectPackageManager } from "./scan/detectPackageManager";
+import { runInstall } from "./install/runInstall";
 
 const TargetSchema = z.enum(["vite", "webpack"]);
 
@@ -43,6 +46,8 @@ export async function main(argv: string[]) {
     .option("--backup-dir <path>", "Backup directory (default: .update-your-vue2/backups/)")
     .option("--zip <path>", "Path to a backup zip to restore (skips selection)")
     .option("--dry-run", "Print what would be restored without writing", false)
+    .option("--prebackup", "Create backup before restore (default: true)", true)
+    .option("--no-prebackup", "Disable pre-restore backup")
     .option("--force", "Skip confirmation prompt", false)
     .option("--verbose", "Verbose logging", false)
     .action(async (projectRootArg: string | undefined, options) => {
@@ -89,6 +94,15 @@ export async function main(argv: string[]) {
         } finally {
           rl.close();
         }
+      }
+
+      if (!options.dryRun && options.prebackup) {
+        const preBackup = await backupProject({
+          projectRoot,
+          backupDir: options.backupDir ?? ".update-your-vue2/backups",
+          projectName: "pre-restore"
+        });
+        logger.info(`Pre-restore backup created: ${preBackup.zipPath}`);
       }
 
       const res = await restoreFromZip({ projectRoot, zipPath, dryRun: options.dryRun });
@@ -157,8 +171,14 @@ export async function main(argv: string[]) {
       const queue = new ChangeQueue();
       const depPlan = await planDependencyUpgrade(loaded.projectRoot, loaded.config);
       applyDependencyUpgradeToQueue(queue, depPlan);
+      const scriptsPlan = await planScriptsMigration(loaded.projectRoot, loaded.config);
+      applyScriptsMigrationToQueue(queue, scriptsPlan, loaded.config.target);
       const buildPlan = planBuildTarget(loaded.projectRoot, loaded.config, queue);
-      const codemodRes = await runCodemods({ projectRoot: loaded.projectRoot, codemods: DEFAULT_CODEMODS });
+      const codemodRes = await runCodemods({
+        projectRoot: loaded.projectRoot,
+        codemods: DEFAULT_CODEMODS,
+        astCodemods: DEFAULT_AST_CODEMODS
+      });
       const typesPlan = planGenerateTypes(loaded.config);
       logger.info(`Planned changes: ${queue.summary().changes.length}`);
       if (depPlan.changes.length) {
@@ -172,6 +192,15 @@ export async function main(argv: string[]) {
       if (buildPlan.notes.length) {
         logger.info("Build notes:");
         buildPlan.notes.forEach((n) => logger.info(`- ${n}`));
+      }
+      if (scriptsPlan.notes.length) {
+        logger.info("Scripts notes:");
+        scriptsPlan.notes.forEach((n) => logger.info(`- ${n}`));
+      }
+      if (codemodRes.edits.length) {
+        logger.info(`Codemod planned edits (${codemodRes.edits.length} files):`);
+        codemodRes.edits.slice(0, 20).forEach((e) => logger.info(`- ${e.filePath}`));
+        if (codemodRes.edits.length > 20) logger.info(`- ... (${codemodRes.edits.length - 20} more)`);
       }
       if (codemodRes.notes.length) {
         logger.info(`Codemod notes (${codemodRes.notes.length}):`);
@@ -195,10 +224,31 @@ export async function main(argv: string[]) {
       const queue = new ChangeQueue();
       const depPlan = await planDependencyUpgrade(loaded.projectRoot, loaded.config);
       applyDependencyUpgradeToQueue(queue, depPlan);
+      const scriptsPlan = await planScriptsMigration(loaded.projectRoot, loaded.config);
+      applyScriptsMigrationToQueue(queue, scriptsPlan, loaded.config.target);
       const buildPlan = planBuildTarget(loaded.projectRoot, loaded.config, queue);
-      const codemodRes = await runCodemods({ projectRoot: loaded.projectRoot, codemods: DEFAULT_CODEMODS });
+      const codemodRes = await runCodemods({
+        projectRoot: loaded.projectRoot,
+        codemods: DEFAULT_CODEMODS,
+        astCodemods: DEFAULT_AST_CODEMODS
+      });
       const typesPlan = planGenerateTypes(loaded.config);
+      for (const edit of codemodRes.edits) {
+        queue.add({
+          kind: "writeFile",
+          path: join(loaded.projectRoot, edit.filePath),
+          content: edit.newContent
+        });
+      }
+      const preflight = queue.preflight();
+      if (!preflight.ok) {
+        throw new Error(`Change preflight failed: ${preflight.reason}`);
+      }
       await queue.apply();
+      if (loaded.config.install) {
+        const pm = await detectPackageManager(loaded.projectRoot);
+        await runInstall({ pm, cwd: loaded.projectRoot });
+      }
 
       await writeReportMd(join(loaded.projectRoot, "migration-report.md"), {
         title: "Vue2 → Vue3 Migration Report",
@@ -217,6 +267,10 @@ export async function main(argv: string[]) {
           {
             title: "Build",
             body: buildPlan.notes.length ? buildPlan.notes.map((n) => `- ${n}`).join("\n") : "- (none)"
+          },
+          {
+            title: "Scripts",
+            body: scriptsPlan.notes.length ? scriptsPlan.notes.map((n) => `- ${n}`).join("\n") : "- (none)"
           },
           {
             title: "Codemods",
