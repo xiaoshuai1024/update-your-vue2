@@ -1,4 +1,5 @@
 {
+  "repositoryUrl": "https://github.com/xiaoshuai1024/update-your-vue2.git",
   "branches": ["master"],
   "tagFormat": "v${version}",
   "plugins": [

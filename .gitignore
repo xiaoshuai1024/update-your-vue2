@@ -53,3 +53,4 @@ test-output
 .update-your-vue2/** */
 .dry-run/** */
 migration-report.md
+.cursor/**
