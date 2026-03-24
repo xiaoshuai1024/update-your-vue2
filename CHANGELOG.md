@@ -1,3 +1,15 @@
+# [1.1.0](https://github.com/xiaoshuai1024/update-your-vue2/compare/v1.0.4...v1.1.0) (2026-03-24)
+
+
+### Bug Fixes
+
+* make Vue3 entry transform runtime-safe ([18a2cd8](https://github.com/xiaoshuai1024/update-your-vue2/commit/18a2cd8dbea6a6bec0b3d3e85e2119240f8fcfdc))
+
+
+### Features
+
+* improve vite scaffold entry generation and docs cleanup ([02d5d62](https://github.com/xiaoshuai1024/update-your-vue2/commit/02d5d6295c431f28eb069e34103c868238a7c21c))
+
 ## [1.0.4](https://github.com/xiaoshuai1024/update-your-vue2/compare/v1.0.3...v1.0.4) (2026-03-19)
 
 
