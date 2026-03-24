@@ -207,5 +207,58 @@ new Vue({ render: h => h(App) }).$mount("#app");
       expect(out).not.toContain("new Vue");
     });
   });
+
+  it("keeps Vue default import when still referenced after AST transform", async () => {
+    await withTempDir(async (dir) => {
+      const filePath = join(dir, "src", "main.js");
+      const source = [
+        'import Vue from "vue";',
+        'import App from "./App.vue";',
+        "Vue.use(foo);",
+        'new Vue({ render: (h) => h(App) }).$mount(document.querySelector("#app"));',
+        ""
+      ].join("\n");
+      await writeTextFile(filePath, source);
+
+      const res = await runCodemods({
+        projectRoot: dir,
+        codemods: DEFAULT_CODEMODS,
+        astCodemods: DEFAULT_AST_CODEMODS
+      });
+
+      expect(res.edits).toHaveLength(1);
+      const out = res.edits[0].newContent;
+      expect(out).toContain('import { createApp } from "vue";');
+      expect(out).toContain('import * as Vue from "vue";');
+      expect(out).toContain("Vue.use(foo);");
+      expect(out).toContain('createApp(App).mount(document.querySelector("#app"));');
+      expect(res.notes.some((n) => n.message.includes("could not safely match"))).toBe(false);
+    });
+  });
+
+  it("removes Vue.config.productionTip to avoid Vue3 runtime crash", async () => {
+    await withTempDir(async (dir) => {
+      const filePath = join(dir, "src", "main.js");
+      const source = [
+        'import Vue from "vue";',
+        'import App from "./App.vue";',
+        "Vue.config.productionTip = false;",
+        'new Vue({ render: h => h(App) }).$mount("#app");',
+        ""
+      ].join("\n");
+      await writeTextFile(filePath, source);
+
+      const res = await runCodemods({
+        projectRoot: dir,
+        codemods: DEFAULT_CODEMODS,
+        astCodemods: DEFAULT_AST_CODEMODS
+      });
+
+      expect(res.edits).toHaveLength(1);
+      const out = res.edits[0].newContent;
+      expect(out).not.toContain("Vue.config.productionTip");
+      expect(out).toContain('createApp(App).mount("#app");');
+    });
+  });
 });
 
