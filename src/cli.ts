@@ -264,7 +264,10 @@ export async function main(argv: string[]) {
         sections: [
           {
             title: "Summary",
-            body: "- (scaffold) Migration steps are not implemented yet."
+            body:
+              loaded.config.target === "vite"
+                ? "- Build target **Vite**: wrote `vite.config.ts` and, when missing, a project-root `index.html` wired to `src/main.*`. The Vue CLI file `public/index.html` is not the Vite SPA entry. Review the Build section and run your test suite."
+                : "- Build target **webpack**: minimal automated webpack migration; see Build and follow project-specific steps."
           },
           {
             title: "Dependencies",
