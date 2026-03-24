@@ -27,8 +27,49 @@ function extractAppIdentifier(renderValue: t.Expression | t.SpreadElement | t.Pr
   return null;
 }
 
+function extractAppIdentifierFromRenderMethod(method: t.ObjectMethod): t.Identifier | null {
+  if (!t.isIdentifier(method.key, { name: "render" })) return null;
+  if (method.params.length !== 1 || !t.isIdentifier(method.params[0])) return null;
+  const h = method.params[0].name;
+  const body = method.body.body;
+  if (body.length !== 1 || !t.isReturnStatement(body[0]) || !body[0].argument) return null;
+  const ret = body[0].argument;
+  if (!t.isCallExpression(ret) || !t.isIdentifier(ret.callee, { name: h })) return null;
+  if (ret.arguments.length !== 1 || !t.isIdentifier(ret.arguments[0])) return null;
+  return t.identifier(ret.arguments[0].name);
+}
+
+function countVueIdentifierRefs(ast: t.File): number {
+  let vueRefCount = 0;
+  traverse(ast, {
+    Identifier(path: any) {
+      if (path.node.name !== "Vue") return;
+      if (path.parentPath && path.parentPath.isImportDefaultSpecifier()) return;
+      vueRefCount += 1;
+    }
+  });
+  return vueRefCount;
+}
+
 function isVueDefaultImport(spec: t.ImportSpecifier | t.ImportDefaultSpecifier | t.ImportNamespaceSpecifier): boolean {
   return t.isImportDefaultSpecifier(spec) && spec.local.name === "Vue";
+}
+
+function isVueNamespaceImport(spec: t.ImportSpecifier | t.ImportDefaultSpecifier | t.ImportNamespaceSpecifier): boolean {
+  return t.isImportNamespaceSpecifier(spec) && spec.local.name === "Vue";
+}
+
+function isVueConfigProductionTipAssignmentStatement(stmt: t.Statement): boolean {
+  if (!t.isExpressionStatement(stmt)) return false;
+  const expr = stmt.expression;
+  if (!t.isAssignmentExpression(expr) || expr.operator !== "=") return false;
+  if (!t.isMemberExpression(expr.left)) return false;
+  const productionTipProp = expr.left.property;
+  if (!t.isIdentifier(productionTipProp, { name: "productionTip" })) return false;
+  const configObj = expr.left.object;
+  if (!t.isMemberExpression(configObj)) return false;
+  if (!t.isIdentifier(configObj.property, { name: "config" })) return false;
+  return t.isIdentifier(configObj.object, { name: "Vue" });
 }
 
 export const transformNewVueMountAst: AstCodemod = {
@@ -55,11 +96,19 @@ export const transformNewVueMountAst: AstCodemod = {
         if (expr.arguments.length !== 1) return;
 
         const obj = mountObj.arguments[0];
-        if (obj.properties.length !== 1) return;
-        const prop = obj.properties[0];
-        if (!t.isObjectProperty(prop) || !t.isIdentifier(prop.key, { name: "render" })) return;
+        const renderProp = obj.properties.find((prop) => {
+          if (t.isObjectProperty(prop) && t.isIdentifier(prop.key, { name: "render" })) return true;
+          if (t.isObjectMethod(prop) && t.isIdentifier(prop.key, { name: "render" })) return true;
+          return false;
+        });
+        if (!renderProp) return;
 
-        const appId = extractAppIdentifier(prop.value as any);
+        let appId: t.Identifier | null = null;
+        if (t.isObjectProperty(renderProp)) {
+          appId = extractAppIdentifier(renderProp.value as any);
+        } else if (t.isObjectMethod(renderProp)) {
+          appId = extractAppIdentifierFromRenderMethod(renderProp);
+        }
         if (!appId) return;
 
         candidates.push({
@@ -81,23 +130,6 @@ export const transformNewVueMountAst: AstCodemod = {
       return { notes };
     }
 
-    // Ensure we can safely drop Vue default import if it's only used by the target expression.
-    let vueRefCount = 0;
-    traverse(ast, {
-      Identifier(path: any) {
-        if (path.node.name !== "Vue") return;
-        if (path.parentPath && path.parentPath.isImportDefaultSpecifier()) return;
-        vueRefCount += 1;
-      }
-    });
-    if (vueRefCount > 1) {
-      notes.push({
-        filePath,
-        message: "Skipped AST new Vue() transform because Vue identifier is still referenced."
-      });
-      return { notes };
-    }
-
     const candidate = candidates[0];
     candidate.stmtPath.replaceWith(
       t.expressionStatement(
@@ -108,33 +140,75 @@ export const transformNewVueMountAst: AstCodemod = {
       )
     );
 
+    // Vue 3 removed `Vue.config.productionTip`; keeping it causes runtime errors.
+    ast.program.body = ast.program.body.filter((stmt) => !isVueConfigProductionTipAssignmentStatement(stmt));
+
     let hasCreateAppImport = false;
-    let vueImportDecl: t.ImportDeclaration | null = null;
+    const vueImportDecls: t.ImportDeclaration[] = [];
+    let hasVueNamespaceImport = false;
+    let hasVueDefaultImport = false;
 
     for (const stmt of ast.program.body) {
       if (!t.isImportDeclaration(stmt) || stmt.source.value !== "vue") continue;
-      vueImportDecl = stmt;
+      vueImportDecls.push(stmt);
+      for (const spec of stmt.specifiers) {
+        if (t.isImportSpecifier(spec) && t.isIdentifier(spec.imported, { name: "createApp" })) {
+          hasCreateAppImport = true;
+        }
+        if (isVueNamespaceImport(spec)) {
+          hasVueNamespaceImport = true;
+        }
+        if (isVueDefaultImport(spec)) {
+          hasVueDefaultImport = true;
+        }
+      }
+    }
+
+    const vueRefCount = countVueIdentifierRefs(ast);
+    if (vueRefCount > 0 && hasVueDefaultImport) {
+      for (const decl of vueImportDecls) {
+        decl.specifiers = decl.specifiers.filter((spec) => !isVueDefaultImport(spec));
+      }
+      ast.program.body = ast.program.body.filter((stmt) => {
+        if (!t.isImportDeclaration(stmt) || stmt.source.value !== "vue") return true;
+        return stmt.specifiers.length > 0;
+      });
+      if (!hasVueNamespaceImport) {
+        ast.program.body.unshift(
+          t.importDeclaration([t.importNamespaceSpecifier(t.identifier("Vue"))], t.stringLiteral("vue"))
+        );
+      }
+    } else if (vueRefCount === 0) {
+      for (const decl of vueImportDecls) {
+        decl.specifiers = decl.specifiers.filter((spec) => !isVueDefaultImport(spec));
+      }
+      ast.program.body = ast.program.body.filter((stmt) => {
+        if (!t.isImportDeclaration(stmt) || stmt.source.value !== "vue") return true;
+        return stmt.specifiers.length > 0;
+      });
+    }
+
+    let firstVueImportDecl: t.ImportDeclaration | null = null;
+    for (const stmt of ast.program.body) {
+      if (!t.isImportDeclaration(stmt) || stmt.source.value !== "vue") continue;
+      firstVueImportDecl = stmt;
       for (const spec of stmt.specifiers) {
         if (t.isImportSpecifier(spec) && t.isIdentifier(spec.imported, { name: "createApp" })) {
           hasCreateAppImport = true;
         }
       }
-      stmt.specifiers = stmt.specifiers.filter((spec) => !isVueDefaultImport(spec));
+      if (hasCreateAppImport) break;
     }
-
-    if (vueImportDecl) {
-      if (!hasCreateAppImport) {
-        vueImportDecl.specifiers.unshift(
+    if (!hasCreateAppImport) {
+      if (firstVueImportDecl && firstVueImportDecl.specifiers.every((s) => !t.isImportNamespaceSpecifier(s))) {
+        firstVueImportDecl.specifiers.push(
           t.importSpecifier(t.identifier("createApp"), t.identifier("createApp"))
         );
+      } else {
+        ast.program.body.unshift(
+          t.importDeclaration([t.importSpecifier(t.identifier("createApp"), t.identifier("createApp"))], t.stringLiteral("vue"))
+        );
       }
-      if (vueImportDecl.specifiers.length === 0) {
-        ast.program.body = ast.program.body.filter((s) => s !== vueImportDecl);
-      }
-    } else {
-      ast.program.body.unshift(
-        t.importDeclaration([t.importSpecifier(t.identifier("createApp"), t.identifier("createApp"))], t.stringLiteral("vue"))
-      );
     }
 
     return { ast, notes };
